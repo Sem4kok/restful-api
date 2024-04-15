@@ -16,7 +16,7 @@ func StartDBConnection() *pgx.Conn {
 		log.Fatal("DATABASE_URL environment is non set")
 	}
 
-	conn, err := pgx.Connect(context.Background(), dbURL)
+	conn, err := pgx.Connect(context.Background(), "postgresql://postgres:Pagany93FZonda!@localhost:5432/matmex")
 	if err != nil {
 		log.Fatal(err)
 	}

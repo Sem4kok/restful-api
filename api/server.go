@@ -17,11 +17,13 @@ func getAlbums(c *gin.Context) {
 var albums []util.Album
 
 func StartServer() {
+
+	conn := db.StartDBConnection()
 	defer func() {
 		_ = conn.Close(context.Background())
 	}()
 
-	albums, err = db.GetAlbumsFromDB(context.Background(), conn)
+	albums, err := db.GetAlbumsFromDB(context.Background(), conn)
 	if err != nil && albums == nil {
 		log.Fatal(err)
 	} else if err != nil {
