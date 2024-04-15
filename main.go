@@ -1,7 +1,7 @@
 package main
 
-import "github.com/Sem4kok/restful-api/db"
+import "github.com/Sem4kok/restful-api/api"
 
 func main() {
-	db.StartDBConnection()
+	api.StartServer()
 }

@@ -7,16 +7,18 @@ import (
 	"github.com/Sem4kok/restful-api/util"
 	"github.com/gin-gonic/gin"
 	"log"
-	"net/http"
 )
 
-func getAlbums(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, albums)
-}
+const (
+	HOST = "localhost:8080"
+)
 
 var albums []util.Album
 
 func StartServer() {
+
+	router := gin.Default()
+	router.GET("/albums", getAlbums)
 
 	conn := db.StartDBConnection()
 	defer func() {
@@ -30,4 +32,8 @@ func StartServer() {
 		fmt.Println("error, with rows.Err(): ", err.Error())
 	}
 
+	err = router.Run(HOST)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
