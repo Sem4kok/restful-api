@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/Sem4kok/restful-api/db"
 	"github.com/Sem4kok/restful-api/util"
 	"github.com/gin-gonic/gin"
@@ -43,9 +42,10 @@ func (h *Handler) getAlbums(c *gin.Context) {
 	var err error = nil
 	albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
 	if err != nil && albums == nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Fatal(err)
 	} else if err != nil {
-		fmt.Println("error, with rows.Err(): ", err.Error())
+		log.Printf("error, with rows.Err(): %v", err.Error())
 	}
 
 	c.IndentedJSON(http.StatusOK, albums)
