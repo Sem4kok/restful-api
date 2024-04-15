@@ -39,6 +39,11 @@ func StartServer() {
 // private method of Handler struct
 // that implements Get Method
 func (h *Handler) getAlbums(c *gin.Context) {
+
+	if albums != nil {
+		c.IndentedJSON(http.StatusOK, albums)
+	}
+
 	var err error = nil
 	albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
 	if err != nil && albums == nil {
