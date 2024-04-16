@@ -42,6 +42,7 @@ func (h *Handler) getAlbums(c *gin.Context) {
 
 	if albums != nil {
 		c.IndentedJSON(http.StatusOK, albums)
+		return
 	}
 
 	var err error = nil
