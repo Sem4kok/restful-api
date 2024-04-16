@@ -29,6 +29,7 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
+	router.POST("/albums", handler.postAlbums)
 
 	err := router.Run(HOST)
 	if err != nil {
@@ -49,10 +50,42 @@ func (h *Handler) getAlbums(c *gin.Context) {
 	albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
 	if err != nil && albums == nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Fatal(err)
+		return
 	} else if err != nil {
 		log.Printf("error, with rows.Err(): %v", err.Error())
 	}
 
 	c.IndentedJSON(http.StatusOK, albums)
+}
+
+func (h *Handler) postAlbums(c *gin.Context) {
+
+	var newAlbums []util.Album
+	if err := c.BindJSON(newAlbums); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// get current data from db
+	if albums == nil {
+		var err error = nil
+		albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
+		if err != nil && albums == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		} else if err != nil {
+			log.Printf("error, with rows.Err(): %v", err.Error())
+		}
+	}
+
+	if err := db.AddData(db.AddConfig{
+		Ctx:       context.Background(),
+		Conn:      h.Conn,
+		Albums:    albums,
+		NewAlbums: newAlbums,
+	}); err != nil {
+		// TODO error catching implementation
+	}
+
+	c.Status(http.StatusOK)
 }
