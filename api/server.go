@@ -78,12 +78,12 @@ func (h *Handler) postAlbums(c *gin.Context) {
 		}
 	}
 
-	if err := db.AddData(db.AddConfig{
-		Ctx:       context.Background(),
-		Conn:      h.Conn,
-		Albums:    albums,
-		NewAlbums: newAlbums,
-	}); err != nil {
+	// validity of sent json data is guaranteed
+	if err := db.AddData(&db.Config{
+		Ctx:    context.Background(),
+		Conn:   h.Conn,
+		Albums: albums,
+	}, newAlbums); err != nil {
 		// TODO error catching implementation
 	}
 
