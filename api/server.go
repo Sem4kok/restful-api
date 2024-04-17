@@ -32,6 +32,7 @@ func StartServer() {
 	router.GET("/albums", handler.getAlbums)
 	// post method won't update data in db
 	router.POST("/albums", handler.postAlbums)
+	router.DELETE("/albums", handler.deleteAlbum)
 
 	err := router.Run(HOST)
 	if err != nil {
@@ -92,4 +93,17 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	time.Sleep(time.Millisecond * 10)
 
 	c.Status(http.StatusOK)
+}
+
+func (h *Handler) deleteAlbum(c *gin.Context) {
+	targetAlbum := util.Album{}
+	if err := c.BindJSON(&targetAlbum); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error with unmarshall": err.Error()})
+	}
+
+	log.Printf("ALBUM: %v", targetAlbum)
+}
+
+func (h *Handler) deleteAlbumById(c *gin.Context) {
+
 }
