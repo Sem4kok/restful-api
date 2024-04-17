@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -29,6 +30,7 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
+	// post method won't update data in db
 	router.POST("/albums", handler.postAlbums)
 
 	err := router.Run(HOST)
@@ -60,8 +62,8 @@ func (h *Handler) getAlbums(c *gin.Context) {
 
 func (h *Handler) postAlbums(c *gin.Context) {
 
-	var newAlbums []util.Album
-	if err := c.BindJSON(newAlbums); err != nil {
+	var newAlbums = make([]util.Album, 1)
+	if err := c.BindJSON(&newAlbums); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -86,6 +88,7 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	}, newAlbums); err != nil {
 		// TODO error catching implementation
 	}
+	time.Sleep(time.Millisecond * 100)
 
 	c.Status(http.StatusOK)
 }
