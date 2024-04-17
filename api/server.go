@@ -2,32 +2,94 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/Sem4kok/restful-api/db"
 	"github.com/Sem4kok/restful-api/util"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
+	"time"
 )
 
-func getAlbums(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, albums)
+const (
+	HOST = "localhost:8080"
+)
+
+type Handler struct {
+	Conn *pgx.Conn
 }
 
 var albums []util.Album
 
 func StartServer() {
 
-	conn := db.StartDBConnection()
+	handler := &Handler{Conn: db.StartDBConnection()}
 	defer func() {
-		_ = conn.Close(context.Background())
+		_ = handler.Conn.Close(context.Background())
 	}()
 
-	albums, err := db.GetAlbumsFromDB(context.Background(), conn)
-	if err != nil && albums == nil {
+	router := gin.Default()
+	router.GET("/albums", handler.getAlbums)
+	// post method won't update data in db
+	router.POST("/albums", handler.postAlbums)
+
+	err := router.Run(HOST)
+	if err != nil {
 		log.Fatal(err)
-	} else if err != nil {
-		fmt.Println("error, with rows.Err(): ", err.Error())
+	}
+}
+
+// private method of Handler struct
+// that implements Get Method
+func (h *Handler) getAlbums(c *gin.Context) {
+
+	if albums != nil {
+		c.IndentedJSON(http.StatusOK, albums)
+		return
 	}
 
+	var err error = nil
+	albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
+	if err != nil && albums == nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	} else if err != nil {
+		log.Printf("error, with rows.Err(): %v", err.Error())
+	}
+
+	c.IndentedJSON(http.StatusOK, albums)
+}
+
+// private method of Handler struct
+// that implements Post Method
+func (h *Handler) postAlbums(c *gin.Context) {
+
+	var newAlbums = make([]util.Album, 1)
+	if err := c.BindJSON(&newAlbums); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// get current data from db
+	if albums == nil {
+		var err error = nil
+		albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
+		if err != nil && albums == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		} else if err != nil {
+			log.Printf("error, with rows.Err(): %v", err.Error())
+		}
+	}
+
+	// validity of sent json data is guaranteed
+	// albums will automatically update
+	db.AddData(&db.Config{
+		Ctx:    context.Background(),
+		Conn:   h.Conn,
+		Albums: &albums,
+	}, newAlbums)
+	time.Sleep(time.Millisecond * 10)
+
+	c.Status(http.StatusOK)
 }
