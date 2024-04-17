@@ -10,12 +10,12 @@ import (
 type Config struct {
 	Ctx    context.Context
 	Conn   *pgx.Conn
-	Albums []util.Album
+	Albums *[]util.Album
 }
 
 // AddData uses goroutine while working with the database
 // AddData won't change data in the db
-func AddData(cfg *Config, newAlbums []util.Album) error {
+func AddData(cfg *Config, newAlbums []util.Album) {
 
 	// add new albums into db
 	// firstly, asynchronous launch of validation requests
@@ -26,42 +26,40 @@ func AddData(cfg *Config, newAlbums []util.Album) error {
 		})
 	}
 
-	return nil
 }
 
-// ХОЧУ СДЕЛАТЬ МЕТОДЫ
 type AlbumConfig struct {
 	Cfg      *Config
 	NewAlbum util.Album
 }
 
-// structure for writing from the channel
+// QueryResult structure for writing from the channel
 type QueryResult struct {
 	ArtistExist bool
 	TitleExist  bool
 }
 
 func tryToAddAlbum(cfg *AlbumConfig) {
-	resultChanel := make(chan QueryResult, 1)
+	resultChanel := make(chan QueryResult, 2)
 	CheckForExisting(cfg, resultChanel)
 	result := <-resultChanel
 
+	log.Printf("result: %v", result)
 	// if album already exist case
 	if result.ArtistExist && result.TitleExist {
-		// TODO implement writing message to client about existing
-		// TODO we should send UPDATE request
 		return
 	}
 
-	if _, err := cfg.Cfg.Conn.Exec(
+	var newId int
+	if err := cfg.Cfg.Conn.QueryRow(
 		cfg.Cfg.Ctx,
-		"INSERT INTO albums (artist, title, price) VALUES ($1, $2, $3)",
+		"INSERT INTO albums (artist, title, price) VALUES ($1, $2, $3) RETURNING id",
 		cfg.NewAlbum.Artist, cfg.NewAlbum.Title, cfg.NewAlbum.Price,
-	); err != nil {
+	).Scan(&newId); err != nil {
 		log.Printf("error with data insertion: %v", err.Error())
 	}
-	// adding data into local Albums slice
-	cfg.Cfg.Albums = append(cfg.Cfg.Albums, cfg.NewAlbum)
 
-	// TODO message <- error message
+	// adding data into local Albums slice
+	cfg.NewAlbum.ID = newId
+	*cfg.Cfg.Albums = append(*cfg.Cfg.Albums, cfg.NewAlbum)
 }

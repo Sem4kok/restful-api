@@ -60,6 +60,8 @@ func (h *Handler) getAlbums(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, albums)
 }
 
+// private method of Handler struct
+// that implements Post Method
 func (h *Handler) postAlbums(c *gin.Context) {
 
 	var newAlbums = make([]util.Album, 1)
@@ -81,14 +83,13 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	}
 
 	// validity of sent json data is guaranteed
-	if err := db.AddData(&db.Config{
+	// albums will automatically update
+	db.AddData(&db.Config{
 		Ctx:    context.Background(),
 		Conn:   h.Conn,
-		Albums: albums,
-	}, newAlbums); err != nil {
-		// TODO error catching implementation
-	}
-	time.Sleep(time.Millisecond * 100)
+		Albums: &albums,
+	}, newAlbums)
+	time.Sleep(time.Millisecond * 10)
 
 	c.Status(http.StatusOK)
 }
