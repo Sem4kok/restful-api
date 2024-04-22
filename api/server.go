@@ -129,7 +129,7 @@ func deleteFromAlbums(id int) {
 	if albums == nil {
 		return
 	}
-	l, r := 0, len(albums)
+	l, r := 0, len(albums)-1
 	// delete album from slice using binary search
 	for l < r {
 		mid := (r-l)/2 + l
