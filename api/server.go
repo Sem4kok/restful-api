@@ -31,7 +31,6 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
-	router.GET("/albums", handler.getAlbumById)
 	router.POST("/albums", handler.postAlbums)
 	router.DELETE("/albums/:id", handler.deleteAlbumById)
 
