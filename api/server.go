@@ -126,14 +126,10 @@ func (h *Handler) deleteAlbumById(c *gin.Context) {
 }
 
 func deleteFromAlbums(id int) {
-	var l, r int
-	l = 0
-	switch albums {
-	case nil:
-		r = 0
-	default:
-		r = len(albums) - 1
+	if albums == nil {
+		return
 	}
+	l, r := 0, len(albums)
 	// delete album from slice using binary search
 	for l < r {
 		mid := (r-l)/2 + l
