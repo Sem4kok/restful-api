@@ -31,7 +31,7 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
-	// post method won't update data in db
+	router.GET("/albums", handler.getAlbumById)
 	router.POST("/albums", handler.postAlbums)
 	router.DELETE("/albums/:id", handler.deleteAlbumById)
 
@@ -64,6 +64,7 @@ func (h *Handler) getAlbums(c *gin.Context) {
 
 // private method of Handler struct
 // that implements Post Method
+// postAlbums method won't update data in db
 func (h *Handler) postAlbums(c *gin.Context) {
 
 	var newAlbums = make([]util.Album, 1)
@@ -104,7 +105,7 @@ func (h *Handler) deleteAlbumById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Printf("error. id is not integer: %v", err.Error())
-
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
 
 	// delete album from DataBase
