@@ -6,6 +6,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// GetAlbumsFromDB writes nothing.
+// Just return current data from db
 func GetAlbumsFromDB(ctx context.Context, conn *pgx.Conn) ([]util.Album, error) {
 	// set a Query connection to db
 	albums := make([]util.Album, 0)
