@@ -137,15 +137,13 @@ func deleteFromAlbums(id int) {
 	// delete album from slice using binary search
 	for l < r {
 		mid := (r-l)/2 + l
-		if albums[mid].ID > id {
+		if albums[mid].ID < id {
 			l = mid + 1
-		} else if albums[mid].ID < id {
+		} else if albums[mid].ID > id {
 			r = mid - 1
 		} else {
-			copy(albums[:mid], albums[mid+1:])
-			albums = albums[:len(albums)-1]
+			albums = append(albums[:mid], albums[mid+1:]...)
 			break
 		}
 	}
-
 }
