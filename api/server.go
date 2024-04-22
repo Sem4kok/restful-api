@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -30,8 +31,8 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
-	// post method won't update data in db
 	router.POST("/albums", handler.postAlbums)
+	router.DELETE("/albums/:id", handler.deleteAlbumById)
 
 	err := router.Run(HOST)
 	if err != nil {
@@ -62,6 +63,7 @@ func (h *Handler) getAlbums(c *gin.Context) {
 
 // private method of Handler struct
 // that implements Post Method
+// postAlbums method won't update data in db
 func (h *Handler) postAlbums(c *gin.Context) {
 
 	var newAlbums = make([]util.Album, 1)
@@ -92,4 +94,52 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	time.Sleep(time.Millisecond * 10)
 
 	c.Status(http.StatusOK)
+}
+
+// deleteAlbum has O(log(n))
+// Time complexity of deleting
+// where n -> len(albums)
+func (h *Handler) deleteAlbumById(c *gin.Context) {
+	// getting id value from client
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("error. id is not integer: %v", err.Error())
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	// delete album from DataBase
+	didExist, err := db.DeleteAlbumFromDB(&db.Config{
+		Ctx:    context.Background(),
+		Conn:   h.Conn,
+		Albums: &albums,
+	}, id)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	if didExist {
+		deleteFromAlbums(id)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "album has been deleted"})
+}
+
+func deleteFromAlbums(id int) {
+	if albums == nil {
+		return
+	}
+	l, r := 0, len(albums)-1
+	// delete album from slice using binary search
+	for l < r {
+		mid := (r-l)/2 + l
+		if albums[mid].ID < id {
+			l = mid + 1
+		} else if albums[mid].ID > id {
+			r = mid - 1
+		} else {
+			albums = append(albums[:mid], albums[mid+1:]...)
+			break
+		}
+	}
 }
