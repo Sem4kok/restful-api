@@ -31,6 +31,7 @@ func StartServer() {
 
 	router := gin.Default()
 	router.GET("/albums", handler.getAlbums)
+	router.GET("/albums/:id", handler.getAlbumById)
 	router.POST("/albums", handler.postAlbums)
 	router.DELETE("/albums/:id", handler.deleteAlbumById)
 
@@ -96,6 +97,21 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func (h *Handler) getAlbumById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("error. id is not integer: %v", err.Error())
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	index := h.findElementInSlice(id, c)
+	if index == -1 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "no such id"})
+	}
+
+	c.IndentedJSON(http.StatusOK, albums[index])
+}
+
 // deleteAlbum has O(log(n))
 // Time complexity of deleting
 // where n -> len(albums)
@@ -131,7 +147,7 @@ func deleteFromAlbums(id int) {
 	}
 	l, r := 0, len(albums)-1
 	// delete album from slice using binary search
-	for l < r {
+	for l <= r {
 		mid := (r-l)/2 + l
 		if albums[mid].ID < id {
 			l = mid + 1
@@ -142,4 +158,37 @@ func deleteFromAlbums(id int) {
 			break
 		}
 	}
+}
+
+// create albums cache if it hasn't created before
+// return index in albums of searching element by ID
+func (h *Handler) findElementInSlice(id int, c *gin.Context) int {
+	// if albums hasn't created before
+	if albums == nil {
+		var err error = nil
+		albums, err = db.GetAlbumsFromDB(context.Background(), h.Conn)
+		if err != nil && albums == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		} else if err != nil {
+			log.Printf("error, with rows.Err(): %v", err.Error())
+		}
+	}
+
+	if len(albums) == 0 {
+		return -1
+	}
+
+	l, r := 0, len(albums)-1
+	for l <= r {
+		mid := (r-l)/2 + l
+		if albums[mid].ID < id {
+			l = mid + 1
+		} else if albums[mid].ID > id {
+			r = mid
+		} else {
+			return mid
+		}
+	}
+
+	return -1
 }
