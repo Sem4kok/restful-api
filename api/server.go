@@ -147,7 +147,7 @@ func deleteFromAlbums(id int) {
 	}
 	l, r := 0, len(albums)-1
 	// delete album from slice using binary search
-	for l < r {
+	for l <= r {
 		mid := (r-l)/2 + l
 		if albums[mid].ID < id {
 			l = mid + 1
@@ -179,7 +179,7 @@ func (h *Handler) findElementInSlice(id int, c *gin.Context) int {
 	}
 
 	l, r := 0, len(albums)-1
-	for l < r {
+	for l <= r {
 		mid := (r-l)/2 + l
 		if albums[mid].ID < id {
 			l = mid + 1
