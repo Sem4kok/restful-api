@@ -34,6 +34,7 @@ func StartServer() {
 	router.GET("/albums/:id", handler.getAlbumById)
 	router.POST("/albums", handler.postAlbums)
 	router.DELETE("/albums/:id", handler.deleteAlbumById)
+	router.PATCH("/albums/:id", handler.updateByID)
 
 	err := router.Run(HOST)
 	if err != nil {
@@ -97,6 +98,8 @@ func (h *Handler) postAlbums(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// getAlbumById return needed album to client in JSON format
+// return error message to client if album does not exist by this id
 func (h *Handler) getAlbumById(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -141,6 +144,8 @@ func (h *Handler) deleteAlbumById(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": "album has been deleted"})
 }
 
+// deleteFromAlbums deleting data from cache storage
+// does not touch DB
 func deleteFromAlbums(id int) {
 	if albums == nil {
 		return
@@ -191,4 +196,39 @@ func (h *Handler) findElementInSlice(id int, c *gin.Context) int {
 	}
 
 	return -1
+}
+
+// updateByID receive JSON album-data.
+// Client can change everything but not ID
+func (h *Handler) updateByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("error. id is not integer: %v", err.Error())
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	index := h.findElementInSlice(id, c)
+	if index == -1 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "no such id"})
+	}
+
+	// update data into cache storage
+	var newAlbum = &util.Album{}
+	if err := c.BindJSON(&newAlbum); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	newAlbum.ID = albums[index].ID
+	albums[index] = *newAlbum
+	log.Printf("%v", newAlbum)
+
+	db.UpdateData(&db.AlbumConfig{
+		Cfg: &db.Config{
+			Ctx:  context.Background(),
+			Conn: h.Conn,
+		},
+		NewAlbum: *newAlbum,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"success": "album has been updated"})
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/Sem4kok/restful-api/util"
 	"github.com/jackc/pgx/v5"
 	"log"
+	"time"
 )
 
 type Config struct {
@@ -24,6 +25,7 @@ func AddData(cfg *Config, newAlbums []util.Album) {
 			Cfg:      cfg,
 			NewAlbum: newAlbum,
 		})
+		time.Sleep(time.Millisecond * 1)
 	}
 
 }
