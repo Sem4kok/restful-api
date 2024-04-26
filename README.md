@@ -8,6 +8,7 @@ This project is a server side developed in Golang programming language using Gin
 
 ## Technologies
 - [gin framework](https://gin-gonic.com/)
+- [pgx driver](https://github.com/jackc/pgx)
 - postgresql
 - [Insomnia](https://insomnia.rest/)
 
